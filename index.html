@@ -1,0 +1,465 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#151c26">
+  <meta name="description" content="Nota adlarını piyano tuşlarıyla eşleştir. Beyaz tuşlarla başla, diyez ve bemollerle devam et.">
+  <title>Nota — Piyano çalışması</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23151c26'/%3E%3Cpath d='M16 16h32v32H16z' fill='%23fff'/%3E%3Cpath d='M26 16v32M38 16v32' stroke='%23151c26' stroke-width='2'/%3E%3Cpath d='M22 16h8v20h-8zm12 0h8v20h-8z' fill='%23ff916d'/%3E%3C/svg%3E">
+  <style>
+:root {
+  color-scheme: light;
+  --ink: #151c26;
+  --muted: #667181;
+  --surface: #f4f6f9;
+  --line: #e1e5ec;
+  --accent: #ff916d;
+  --stage: #151c26;
+  --stage-muted: #a9b5c5;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-synthesis: none;
+}
+* { box-sizing: border-box; }
+body { margin: 0; color: var(--ink); background: var(--surface); font-size: 1rem; line-height: 1.5; }
+button, select, input { font: inherit; }
+button, select { -webkit-tap-highlight-color: transparent; }
+button { cursor: pointer; }
+button:disabled { cursor: default; }
+button:focus-visible, select:focus-visible, a:focus-visible { outline: 3px solid #3678e2; outline-offset: 4px; }
+button:disabled { opacity: .44; }
+svg { display: block; }
+.site-header { max-width: 1192px; padding: 34px 36px 30px; margin: auto; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+.brand { color: var(--ink); text-decoration: none; display: inline-flex; gap: 10px; align-items: center; font-size: 1.85rem; font-weight: 750; letter-spacing: -.08em; }
+.brand-mark { width: 36px; height: 36px; }
+.brand-period { color: #c54b2c; }
+.header-caption { color: var(--muted); font-size: .75rem; font-weight: 650; letter-spacing: .16em; }
+.workspace { max-width: 1192px; margin: 0 auto; padding: 0 36px; display: grid; grid-template-columns: minmax(0, 1fr) 304px; gap: 24px; align-items: start; }
+.practice { border-radius: 24px; background: var(--stage); color: #fff; overflow: hidden; padding: 28px 30px 24px; box-shadow: 0 18px 42px -28px #10203688; }
+.practice-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+h1 { font-size: 1.05rem; margin: 0; font-weight: 600; }
+.level-badge { color: #e0e6ef; background: #26313f; border: 1px solid #384354; padding: 5px 11px; border-radius: 20px; font-size: .875rem; }
+.question { text-align: center; padding: 40px 0 36px; }
+.question-label { color: var(--stage-muted); font-size: .75rem; letter-spacing: .16em; margin: 0 0 14px; font-weight: 600; }
+.target { font-size: clamp(4rem, 8vw, 5.75rem); line-height: 1.15; letter-spacing: -.06em; font-weight: 700; min-height: 1.15em; }
+.target .accidental { color: var(--accent); font-size: .73em; vertical-align: .1em; margin-left: .1em; letter-spacing: 0; }
+.question-instruction { margin: 14px 0 0; font-size: .9375rem; color: #c2cbd8; }
+.keyboard-shell { padding: 10px; border-radius: 15px; background: #080d15; box-shadow: inset 0 1px 5px #0008; }
+.keyboard { position: relative; display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 3px; height: 208px; isolation: isolate; }
+.key { border: 0; display: flex; justify-content: center; align-items: end; padding: 0 2px 18px; position: relative; touch-action: manipulation; user-select: none; -webkit-user-select: none; transition: background .12s, box-shadow .12s, transform .12s; }
+.white-key { background: linear-gradient(180deg,#fff 60%,#e8edf2); color: #394250; border-radius: 0 0 7px 7px; box-shadow: inset 0 -5px 0 #c7cdd6; min-width: 0; }
+.black-key { position: absolute; z-index: 2; top: 0; width: 8%; min-width: 24px; height: 62%; border-radius: 0 0 5px 5px; background: linear-gradient(90deg,#111923,#303b49 65%,#111923); box-shadow: inset 0 -5px 0 #05070b, 1px 3px 4px #0006; color: #e4ebf2; padding-bottom: 14px; transform: translateX(-50%); }
+.key-label { font-size: .875rem; line-height: 1.15; opacity: 0; visibility: hidden; font-weight: 650; text-align: center; }
+.keyboard.show-labels .key-label, .key.is-hint .key-label { opacity: 1; visibility: visible; }
+.keyboard[data-mode="white"] .black-key .key-label { opacity: 0; visibility: hidden; }
+.black-key .key-label { font-size: .75rem; }
+.key:active, .key.is-pressed { transform: translateY(2px); }
+.black-key:active, .black-key.is-pressed { transform: translate(-50%,2px); }
+.key.is-correct { background: #9becbf; color: #102e1b; box-shadow: inset 0 -5px 0 #63b087; }
+.key.is-wrong { background: #ff9a93; color: #57231e; box-shadow: inset 0 -5px 0 #d16c66; }
+.key.is-hint { box-shadow: inset 0 0 0 3px var(--accent), inset 0 -5px 0 #dd6948; }
+.black-key.is-hint { background: #463126; }
+.key:focus-visible { z-index: 3; outline-offset: -4px; outline-color: #1263e7; }
+.feedback-row { min-height: 77px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.feedback { color: #c8d2df; font-size: .9375rem; margin: 0; }
+.feedback[data-kind="correct"] { color: #9becbf; }
+.feedback[data-kind="wrong"] { color: #ffb1aa; }
+.feedback[data-kind="hint"] { color: #ffc1aa; }
+.hint-button { display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0; border: 1px solid #455063; background: transparent; color: #fff; padding: 10px 12px; min-height: 44px; border-radius: 10px; font-size: .875rem; }
+.hint-button svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.hint-button:hover { background: #26313f; }
+.practice-footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-top: 18px; border-top: 1px solid #344052; flex-wrap: wrap; }
+.subtle { color: var(--stage-muted); font-size: .8125rem; }
+.next-button { color: #201910; background: var(--accent); border: 0; padding: 12px 18px; border-radius: 10px; font-weight: 650; font-size: .9375rem; min-height: 46px; }
+.next-button:not(:disabled):hover { background: #ffab90; }
+.side-panel { display: grid; gap: 20px; }
+.settings, .session { background: #fff; border: 1px solid var(--line); border-radius: 20px; padding: 24px; }
+.eyebrow { font-size: .75rem; color: var(--muted); letter-spacing: .12em; font-weight: 650; margin: 0 0 6px; }
+h2 { font-size: 1.25rem; margin: 0 0 23px; line-height: 1.3; letter-spacing: -.025em; }
+.field-label { display: block; font-size: .875rem; font-weight: 600; margin-bottom: 8px; }
+select { width: 100%; color: var(--ink); border: 1px solid #cfd6e0; padding: 12px 30px 12px 12px; background: #f9fafc; border-radius: 9px; font-size: .875rem; min-height: 46px; }
+.setting-help { color: var(--muted); margin: 10px 0 0; font-size: .875rem; min-height: 42px; }
+.setting-divider { margin: 22px 0; height: 1px; background: var(--line); }
+.toggle-row { display: flex; align-items: center; justify-content: space-between; gap: 14px; position: relative; cursor: pointer; }
+.toggle-row .field-label { margin-bottom: 4px; }
+.toggle-help { display: block; color: var(--muted); font-size: .875rem; }
+.switch-input { position: absolute; width: 44px; height: 44px; right: -1px; opacity: 0; cursor: pointer; margin: 0; }
+.switch { display: block; flex-shrink: 0; width: 42px; height: 24px; border-radius: 20px; background: #c6ced9; pointer-events: none; position: relative; }
+.switch::after { content: ""; position: absolute; top: 3px; left: 3px; height: 18px; width: 18px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px #0003; transition: transform .15s; }
+.switch-input:checked + .switch { background: #b8492d; }
+.switch-input:checked + .switch::after { transform: translateX(18px); }
+.switch-input:focus-visible + .switch { outline: 3px solid #3678e2; outline-offset: 4px; }
+.session-heading { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.session-heading h2 { font-size: 1rem; margin: 0; }
+.reset-button { border: 0; padding: 8px 0 8px 8px; background: none; color: #667181; font-size: .875rem; min-height: 44px; }
+.reset-button:hover { color: var(--ink); text-decoration: underline; }
+.session-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 16px; }
+.stat-value { display: block; font-size: 1.9rem; font-weight: 650; letter-spacing: -.05em; line-height: 1.25; }
+.stat-label { display: block; color: var(--muted); font-size: .8125rem; margin-top: 5px; }
+.session-note { color: var(--muted); font-size: .875rem; margin: 20px 0 0; }
+.learning-note { padding: 2px 16px; display: flex; gap: 12px; color: var(--muted); font-size: .875rem; }
+.learning-note svg { width: 20px; height: 20px; flex-shrink: 0; fill: currentColor; margin-top: 3px; }
+.learning-note p { margin: 0; }
+.learning-note strong { display: block; font-weight: 600; color: #414e60; }
+.site-footer { max-width: 1192px; padding: 28px 36px 30px; margin: auto; display: flex; justify-content: space-between; gap: 20px; color: var(--muted); font-size: .8125rem; }
+.noscript { padding: 20px; text-align: center; color: #a42727; }
+@media (max-width: 1000px) {
+  .workspace { grid-template-columns: minmax(0,1fr) 275px; gap: 18px; }
+  .practice { padding: 24px; }
+  .settings, .session { padding: 20px; }
+  .keyboard { height: 190px; }
+}
+@media (max-width: 780px) {
+  .site-header { padding: 24px 22px 20px; }
+  .workspace { padding: 0 22px; grid-template-columns: minmax(0,1fr); gap: 20px; }
+  .side-panel { grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 16px; }
+  .learning-note { grid-column: 1 / -1; }
+  .practice { padding: 24px; }
+  .question { padding: 26px 0; }
+  .target { font-size: 4.75rem; }
+  .keyboard { height: 200px; }
+  .site-footer { padding: 24px 22px; }
+}
+@media (max-width: 500px) {
+  .site-header { padding: 19px 16px; }
+  .brand { font-size: 1.65rem; }
+  .brand-mark { width: 32px; height: 32px; }
+  .header-caption { font-size: .75rem; letter-spacing: .10em; }
+  .workspace { padding: 0 12px; gap: 16px; }
+  .practice { padding: 20px 14px 18px; border-radius: 20px; }
+  .practice-top { padding: 0 4px; }
+  .level-badge { font-size: .8125rem; padding: 4px 9px; }
+  .question { padding: 25px 0; }
+  .question-label { font-size: .75rem; }
+  .target { font-size: clamp(3rem,18vw,4.5rem); }
+  .question-instruction { font-size: .875rem; }
+  .keyboard-shell { padding: 7px; border-radius: 10px; }
+  .keyboard { height: 164px; gap: 2px; }
+  .key { padding-bottom: 13px; }
+  .key-label { font-size: .8125rem; }
+  .black-key .key-label { font-size: .75rem; }
+  .black-key { width: 9%; padding-bottom: 12px; }
+  .feedback-row { gap: 9px; min-height: 77px; }
+  .feedback { font-size: .875rem; }
+  .hint-button { padding: 9px; font-size: .8125rem; }
+  .practice-footer { align-items: center; gap: 9px; padding-top: 16px; }
+  .subtle { max-width: 130px; font-size: .75rem; }
+  .next-button { padding: 11px 13px; font-size: .875rem; }
+  .side-panel { grid-template-columns: minmax(0,1fr); gap: 14px; }
+  .settings, .session { border-radius: 16px; padding: 20px; }
+  .settings h2 { margin-bottom: 18px; }
+  .setting-help { min-height: 0; }
+  .setting-divider { margin: 18px 0; }
+  .session-stats { margin-top: 10px; }
+  .learning-note { padding: 4px 10px; }
+  .site-footer { padding: 24px 18px; font-size: .75rem; flex-wrap: wrap; gap: 8px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition: none !important; }
+}
+
+  </style>
+
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="./" aria-label="Nota, başlangıç">
+      <svg class="brand-mark" viewBox="0 0 36 36" aria-hidden="true"><rect width="36" height="36" rx="10" fill="currentColor"/><path d="M10 10h16v17H10z" fill="#fff"/><path d="M15.3 10v17m5.4-17v17" stroke="#151c26"/><path d="M13 10h4.5v10H13zm5.5 0H23v10h-4.5z" fill="#ff916d"/></svg>
+      <span>nota<span class="brand-period">.</span></span>
+    </a>
+    <span class="header-caption">PİYANO ÇALIŞMASI</span>
+  </header>
+
+  <main class="workspace">
+    <section class="practice" aria-labelledby="practice-title">
+      <div class="practice-top">
+        <h1 id="practice-title">Tuşu bul</h1>
+        <span class="level-badge" id="level-badge">Beyaz tuşlar</span>
+      </div>
+      <div class="question">
+        <p class="question-label">BU NOTA HANGİ TUŞTA?</p>
+        <div id="target" class="target" aria-live="polite" aria-atomic="true">Do</div>
+        <p class="question-instruction">Klavyede doğru tuşa dokun.</p>
+      </div>
+
+      <div class="keyboard-shell">
+        <div id="keyboard" class="keyboard" role="group" aria-label="Piyano klavyesi"></div>
+      </div>
+
+      <div class="feedback-row">
+        <p id="feedback" class="feedback" role="status" aria-live="polite">Acele etme. Tuş gruplarına bak.</p>
+        <button id="hint" class="hint-button" type="button">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18h6m-5 3h4M8.2 13.8A6 6 0 1 1 15.8 13.8C15 14.5 15 16 15 16H9s0-1.5-.8-2.2Z"/></svg>
+          İpucu
+        </button>
+      </div>
+      <div class="practice-footer">
+        <span class="subtle" id="keyboard-caption">Bir oktav · iki Do da doğru</span>
+        <button id="next" class="next-button" type="button" disabled>Sonraki nota</button>
+      </div>
+    </section>
+
+    <aside class="side-panel" aria-label="Çalışma seçenekleri">
+      <section class="settings" aria-labelledby="settings-title">
+        <p class="eyebrow">KÜÇÜK ADIMLARLA</p>
+        <h2 id="settings-title">Çalışmanı seç</h2>
+        <label for="mode" class="field-label">Notalar</label>
+        <select id="mode">
+          <option value="white">Yalnızca beyaz tuşlar</option>
+          <option value="sharp">Beyaz tuşlar + diyezler ♯</option>
+          <option value="flat">Beyaz tuşlar + bemoller ♭</option>
+          <option value="mixed">Beyaz tuşlar + diyez / bemol</option>
+        </select>
+        <p id="mode-help" class="setting-help">Do, Re, Mi, Fa, Sol, La, Si.</p>
+        <div class="setting-divider"></div>
+        <label class="toggle-row" for="labels">
+          <span><span class="field-label">Tuş isimleri</span><span class="toggle-help">Öğrenirken göster, çalışırken gizle.</span></span>
+          <input id="labels" class="switch-input" type="checkbox">
+          <span class="switch" aria-hidden="true"></span>
+        </label>
+      </section>
+
+      <section class="session" aria-labelledby="session-title">
+        <div class="session-heading"><h2 id="session-title">Bu çalışma</h2><button id="reset" class="reset-button" type="button">Sıfırla</button></div>
+        <div class="session-stats">
+          <div><span class="stat-value" id="found">0</span><span class="stat-label">Bulunan nota</span></div>
+          <div><span class="stat-value" id="first-try">—</span><span class="stat-label">İlk denemede</span></div>
+        </div>
+        <p class="session-note">Yüzde, ilk denemede ipucusuz ve isimleri görmeden bulduklarını gösterir.</p>
+      </section>
+
+      <div class="learning-note">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3v13a3 3 0 1 1-2-2.83V5l11-2v11a3 3 0 1 1-2-2.83V3.36Z"/></svg>
+        <p id="learning-tip"><strong>Do’yu bulmak için</strong> iki siyah tuşun hemen soluna bak.</p>
+      </div>
+    </aside>
+  </main>
+  <footer class="site-footer"><span>Önce doğru tuş. Sonra hız.</span><span>Nota · Başlangıç çalışması</span></footer>
+  <noscript><p class="noscript">Çalışmayı açmak için tarayıcında JavaScript etkin olmalı.</p></noscript>
+<script>
+/* Nota: bağımlılıksız, tarayıcıda çalışan nota–tuş eşleştirme çalışması. */
+(() => {
+  'use strict';
+
+  // pitch, Do=0 olacak şekilde bir oktav içindeki sesin yeridir.
+  // Aynı tuşun diyezli ve bemollü isimleri aynı pitch değerini kullanır.
+  const WHITE_NOTES = [
+    { name: 'Do', pitch: 0 }, { name: 'Re', pitch: 2 },
+    { name: 'Mi', pitch: 4 }, { name: 'Fa', pitch: 5 },
+    { name: 'Sol', pitch: 7 }, { name: 'La', pitch: 9 },
+    { name: 'Si', pitch: 11 },
+  ];
+  const BLACK_NOTES = [
+    { pitch: 1, sharp: 'Do', flat: 'Re', boundary: 1 },
+    { pitch: 3, sharp: 'Re', flat: 'Mi', boundary: 2 },
+    { pitch: 6, sharp: 'Fa', flat: 'Sol', boundary: 4 },
+    { pitch: 8, sharp: 'Sol', flat: 'La', boundary: 5 },
+    { pitch: 10, sharp: 'La', flat: 'Si', boundary: 6 },
+  ];
+  const MODE_INFO = {
+    white: ['Beyaz tuşlar', 'Do, Re, Mi, Fa, Sol, La, Si.'],
+    sharp: ['Diyezler ♯', 'Beyaz tuşlar ve beş siyah tuşun diyezli isimleri.'],
+    flat: ['Bemoller ♭', 'Beyaz tuşlar ve beş siyah tuşun bemollü isimleri.'],
+    mixed: ['Diyez / bemol', 'Siyah tuşların iki ismini de çalış. Örneğin Do♯ ve Re♭ aynı tuş.'],
+  };
+  const HINTS = {
+    0: 'İki siyah tuşun hemen solundaki beyaz tuş.',
+    1: 'İkili siyah tuş grubunun soldaki tuşu.',
+    2: 'İki siyah tuşun arasındaki beyaz tuş.',
+    3: 'İkili siyah tuş grubunun sağdaki tuşu.',
+    4: 'İki siyah tuşun hemen sağındaki beyaz tuş.',
+    5: 'Üç siyah tuşun hemen solundaki beyaz tuş.',
+    6: 'Üçlü siyah tuş grubunun soldaki tuşu.',
+    7: 'Üçlü siyah tuş grubunda ilk iki siyah tuşun arasındaki beyaz tuş.',
+    8: 'Üçlü siyah tuş grubunun ortadaki tuşu.',
+    9: 'Üçlü siyah tuş grubunda son iki siyah tuşun arasındaki beyaz tuş.',
+    10: 'Üçlü siyah tuş grubunun sağdaki tuşu.',
+    11: 'Üç siyah tuşun hemen sağındaki beyaz tuş.',
+  };
+
+  const ui = Object.fromEntries([
+    'keyboard', 'target', 'feedback', 'hint', 'next', 'mode', 'labels',
+    'level-badge', 'mode-help', 'found', 'first-try', 'reset', 'learning-tip',
+  ].map(id => [id, document.getElementById(id)]));
+  const state = {
+    mode: 'white', target: null, bag: [], found: 0, firstTry: 0,
+    hadError: false, usedHint: false, solved: false, hintVisible: false,
+  };
+
+  function notePool(mode) {
+    const notes = WHITE_NOTES.map(note => ({ ...note, accidental: '' }));
+    if (mode !== 'white') {
+      for (const note of BLACK_NOTES) {
+        if (mode === 'sharp' || mode === 'mixed') notes.push({ name: note.sharp, accidental: '♯', pitch: note.pitch });
+        if (mode === 'flat' || mode === 'mixed') notes.push({ name: note.flat, accidental: '♭', pitch: note.pitch });
+      }
+    }
+    return notes;
+  }
+
+  function shuffle(notes) {
+    const result = [...notes];
+    for (let i = result.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [result[i], result[j]] = [result[j], result[i]];
+    }
+    return result;
+  }
+
+  function refillBag() {
+    state.bag = shuffle(notePool(state.mode));
+  }
+
+  function makeKey(note, isBlack, index) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = `key ${isBlack ? 'black-key' : 'white-key'}`;
+    button.dataset.pitch = String(note.pitch);
+    button.setAttribute('aria-label', isBlack ? `${note.sharp} diyez veya ${note.flat} bemol` : `${note.name}, ${index === 7 ? 'sağdaki' : 'soldan ' + (index + 1) + '.'} beyaz tuş`);
+    if (isBlack) button.style.left = `${note.boundary * 12.5}%`;
+    const label = document.createElement('span');
+    label.className = 'key-label';
+    label.setAttribute('aria-hidden', 'true');
+    label.textContent = isBlack ? `${note.sharp}♯` : note.name;
+    button.appendChild(label);
+    button.addEventListener('click', () => answer(note.pitch, button));
+    return button;
+  }
+
+  function buildKeyboard() {
+    ui.keyboard.dataset.mode = state.mode;
+    [...WHITE_NOTES, WHITE_NOTES[0]].forEach((note, index) => ui.keyboard.appendChild(makeKey(note, false, index)));
+    BLACK_NOTES.forEach(note => ui.keyboard.appendChild(makeKey(note, true)));
+    // Sırayla odaklanma, ses sırasıyla ilerler; görsel konum değişmez.
+    [...ui.keyboard.children].sort((a, b) => {
+      const aLastDo = a.classList.contains('white-key') && a.getAttribute('aria-label').includes('sağdaki');
+      const bLastDo = b.classList.contains('white-key') && b.getAttribute('aria-label').includes('sağdaki');
+      return (aLastDo ? 12 : Number(a.dataset.pitch)) - (bLastDo ? 12 : Number(b.dataset.pitch));
+    }).forEach(key => ui.keyboard.appendChild(key));
+    // Grid sütunlarını DOM sırasından bağımsız tut.
+    [...ui.keyboard.querySelectorAll('.white-key')].forEach((key, index) => { key.style.gridColumn = String(index + 1); key.style.gridRow = '1'; });
+  }
+
+  function clearKeyStates() {
+    ui.keyboard.querySelectorAll('.key').forEach(key => {
+      key.classList.remove('is-correct', 'is-wrong', 'is-hint');
+      key.setAttribute('aria-disabled', 'false');
+    });
+  }
+
+  function showFeedback(message, kind = '') {
+    ui.feedback.textContent = message;
+    ui.feedback.dataset.kind = kind;
+  }
+
+  function showTarget() {
+    ui.target.replaceChildren(document.createTextNode(state.target.name));
+    if (state.target.accidental) {
+      const accidental = document.createElement('span');
+      accidental.className = 'accidental';
+      accidental.textContent = state.target.accidental;
+      ui.target.appendChild(accidental);
+    }
+    ui.target.setAttribute('aria-label', state.target.name + (state.target.accidental === '♯' ? ' diyez' : state.target.accidental === '♭' ? ' bemol' : ''));
+  }
+
+  function nextQuestion() {
+    if (!state.bag.length) refillBag();
+    // Yeni torbada da aynı tuş arka arkaya sorulmasın.
+    if (state.target && state.bag.length > 1 && state.bag[state.bag.length - 1].pitch === state.target.pitch) {
+      const otherIndex = state.bag.findIndex(note => note.pitch !== state.target.pitch);
+      if (otherIndex >= 0) [state.bag[otherIndex], state.bag[state.bag.length - 1]] = [state.bag[state.bag.length - 1], state.bag[otherIndex]];
+    }
+    state.target = state.bag.pop();
+    state.hadError = false;
+    state.usedHint = false;
+    state.solved = false;
+    state.hintVisible = false;
+    clearKeyStates();
+    showTarget();
+    ui.next.disabled = true;
+    ui.hint.disabled = false;
+    ui.hint.removeAttribute('aria-pressed');
+    showFeedback('Acele etme. Tuş gruplarına bak.');
+  }
+
+  function updateStats() {
+    ui.found.textContent = String(state.found);
+    ui['first-try'].textContent = state.found ? `${Math.round(state.firstTry / state.found * 100)}%` : '—';
+  }
+
+  function answer(pitch, key) {
+    if (state.solved) return;
+    ui.keyboard.querySelectorAll('.is-wrong').forEach(button => button.classList.remove('is-wrong'));
+    if (pitch !== state.target.pitch) {
+      state.hadError = true;
+      key.classList.add('is-wrong');
+      showFeedback('Bu tuş değil. Bir daha dene.', 'wrong');
+      return;
+    }
+    state.solved = true;
+    state.found += 1;
+    if (!state.hadError && !state.usedHint && !ui.labels.checked) state.firstTry += 1;
+    ui.keyboard.querySelectorAll('.is-hint').forEach(button => button.classList.remove('is-hint'));
+    key.classList.add('is-correct');
+    ui.keyboard.querySelectorAll('.key').forEach(button => button.setAttribute('aria-disabled', 'true'));
+    ui.hint.disabled = true;
+    ui.next.disabled = false;
+    showFeedback(`Doğru! ${state.target.name}${state.target.accidental} notasını buldun.`, 'correct');
+    updateStats();
+  }
+
+  function showHint() {
+    if (state.solved) return;
+    state.usedHint = true;
+    state.hintVisible = !state.hintVisible;
+    ui.keyboard.querySelectorAll('.key').forEach(key => key.classList.toggle('is-hint', state.hintVisible && Number(key.dataset.pitch) === state.target.pitch));
+    ui.hint.setAttribute('aria-pressed', String(state.hintVisible));
+    showFeedback(state.hintVisible ? HINTS[state.target.pitch] : 'İpucunu kapattın. Doğru tuşu bul.', state.hintVisible ? 'hint' : '');
+  }
+
+  function changeMode() {
+    state.mode = ui.mode.value;
+    ui.keyboard.dataset.mode = state.mode;
+    state.bag = [];
+    state.found = 0;
+    state.firstTry = 0;
+    ui['level-badge'].textContent = MODE_INFO[state.mode][0];
+    ui['mode-help'].textContent = MODE_INFO[state.mode][1];
+    ui['learning-tip'].replaceChildren();
+    const strong = document.createElement('strong');
+    strong.textContent = state.mode === 'white' ? 'Do’yu bulmak için' : 'Siyah tuşun iki ismi olabilir';
+    ui['learning-tip'].append(strong, document.createTextNode(state.mode === 'white' ? 'İki siyah tuşun hemen soluna bak.' : 'Do♯ ile Re♭ aynı tuştur. Mi–Fa ve Si–Do arasında siyah tuş yoktur.'));
+    ui.keyboard.querySelectorAll('.black-key').forEach(key => {
+      const note = BLACK_NOTES.find(note => note.pitch === Number(key.dataset.pitch));
+      key.querySelector('.key-label').textContent = state.mode === 'flat' ? `${note.flat}♭` : state.mode === 'mixed' ? `${note.sharp}♯\n${note.flat}♭` : `${note.sharp}♯`;
+      key.querySelector('.key-label').style.whiteSpace = 'pre-line';
+    });
+    updateStats();
+    nextQuestion();
+  }
+
+  ui.next.addEventListener('click', () => {
+    if (!state.solved) return;
+    nextQuestion();
+    ui.keyboard.querySelector('.white-key').focus({ preventScroll: true });
+  });
+  ui.hint.addEventListener('click', showHint);
+  ui.mode.addEventListener('change', changeMode);
+  ui.labels.addEventListener('change', () => ui.keyboard.classList.toggle('show-labels', ui.labels.checked));
+  ui.reset.addEventListener('click', () => {
+    state.found = 0;
+    state.firstTry = 0;
+    state.bag = [];
+    updateStats();
+    nextQuestion();
+    showFeedback('Yeni çalışma başladı. Doğru tuşu bul.');
+  });
+
+  buildKeyboard();
+  nextQuestion();
+})();
+
+</script>
+</body>
+</html>
